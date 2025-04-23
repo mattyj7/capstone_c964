@@ -2,9 +2,9 @@ flask==2.3.3
 dash==2.15.0
 dash-bootstrap-components==1.5.0
 plotly==5.18.0
-pandas==2.2.1
-numpy==1.26.4
+pandas==2.2.2
+numpy==2.0.2
 joblib==1.4.2
-scikit-learn==1.4.2
+scikit-learn==1.6.1
 nbconvert==7.5.0
 nbformat==5.7.0
