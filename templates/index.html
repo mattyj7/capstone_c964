@@ -21,42 +21,68 @@
         font-family: Arial, sans-serif;
         padding: 20px;
       }
-
-      h2 {
-        text-align: center;
-        margin-bottom: 30px;
+      .container {
+        max-width: 800px;
+        padding: 30px;
+        margin: 0 auto; /* Center the container horizontally */
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* Center the form elements horizontally */
       }
 
-      .form-container {
-        max-width: 700px;
-        margin: 0 auto;
+      form {
+        width: 100%;
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      }
+
+      label {
+        font-size: 1.1rem;
+        font-weight: bold;
+        display: block; /* Ensure labels are on their own line */
+        margin-bottom: 8px; /* Space between label and input */
       }
 
       input,
       select {
         width: 100%;
         padding: 10px;
-        margin: 5px 0;
-        border: 1px solid #ccc;
+        margin-top: 5px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        font-size: 1rem;
+        display: block; /* Ensure inputs are on their own line */
       }
 
       button {
-        width: 100%;
-        padding: 10px;
         background-color: #4caf50;
         color: white;
+        padding: 12px 20px;
         border: none;
+        border-radius: 5px;
         cursor: pointer;
+        font-size: 1.1rem;
+        width: 100%; /* Make the button full width */
       }
 
       button:hover {
         background-color: #45a049;
       }
 
-      .result {
-        margin-top: 20px;
-        font-size: 1.2em;
+      #result {
+        margin-top: 30px;
+        font-size: 1.2rem;
+        color: #333;
+        font-weight: bold;
+      }
+
+      h2 {
         text-align: center;
+        color: #333;
+        margin-bottom: 30px;
       }
     </style>
   </head>
@@ -64,7 +90,7 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
       <div class="container-fluid">
-        <a class="navbar-brand" href="/">Diabetes Prediction</a>
+        <a class="navbar-brand" href="/">Diabetes Risk Score</a>
         <button
           class="navbar-toggler"
           type="button"
@@ -76,7 +102,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav ms-auto">
             <li class="nav-item">
-              <a class="nav-link" href="/">Assess</a>
+              <a class="nav-link" href="/">Diabetes Risk Form</a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="/dashboard">Dashboard</a>
@@ -85,119 +111,187 @@
         </div>
       </div>
     </nav>
+    <div class="container">
+      <h2>Diabetes Risk Form</h2>
 
-    <h2>Diabetes Prediction Form</h2>
+      <form onsubmit="event.preventDefault(); submitForm();">
+        <label
+          >HighBP:
+          <select id="HighBP" required>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
 
-    <div class="form-container">
-      <!-- Form fields -->
-      <label for="HighBP">High Blood Pressure:</label>
-      <select id="HighBP">
-        <option value="0">No</option>
-        <option value="1">Yes</option>
-      </select>
+        <label
+          >HighChol:
+          <select id="HighChol" required>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
 
-      <label for="HighChol">High Cholesterol:</label>
-      <select id="HighChol">
-        <option value="0">No</option>
-        <option value="1">Yes</option>
-      </select>
+        <label
+          >CholCheck:
+          <select id="CholCheck" required>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
 
-      <label for="CholCheck">Cholesterol Check in 5 years:</label>
-      <select id="CholCheck">
-        <option value="0">No</option>
-        <option value="1">Yes</option>
-      </select>
+        <label>BMI: <input type="number" step="0.1" id="BMI" required /></label>
 
-      <label for="BMI">BMI:</label>
-      <input type="number" id="BMI" step="any" />
+        <label
+          >Smoker:
+          <select id="Smoker" required>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
 
-      <label for="Smoker">Smoker:</label>
-      <select id="Smoker">
-        <option value="0">No</option>
-        <option value="1">Yes</option>
-      </select>
+        <label
+          >Stroke:
+          <select id="Stroke" required>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
 
-      <label for="Stroke">Stroke:</label>
-      <select id="Stroke">
-        <option value="0">No</option>
-        <option value="1">Yes</option>
-      </select>
+        <label
+          >HeartDiseaseorAttack:
+          <select id="HeartDiseaseorAttack" required>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
 
-      <label for="HeartDiseaseorAttack">Heart Disease or Attack:</label>
-      <select id="HeartDiseaseorAttack">
-        <option value="0">No</option>
-        <option value="1">Yes</option>
-      </select>
+        <label
+          >PhysActivity:
+          <select id="PhysActivity" required>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
 
-      <label for="PhysActivity">Physical Activity in Past 30 Days:</label>
-      <select id="PhysActivity">
-        <option value="0">No</option>
-        <option value="1">Yes</option>
-      </select>
+        <label
+          >Fruits:
+          <select id="Fruits" required>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
 
-      <label for="Fruits">Consume Fruits Daily:</label>
-      <select id="Fruits">
-        <option value="0">No</option>
-        <option value="1">Yes</option>
-      </select>
+        <label
+          >Veggies:
+          <select id="Veggies" required>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
 
-      <label for="Veggies">Consume Vegetables Daily:</label>
-      <select id="Veggies">
-        <option value="0">No</option>
-        <option value="1">Yes</option>
-      </select>
+        <label
+          >HvyAlcoholConsump:
+          <select id="HvyAlcoholConsump" required>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
 
-      <label for="HvyAlcoholConsump">Heavy Alcohol Consumption:</label>
-      <select id="HvyAlcoholConsump">
-        <option value="0">No</option>
-        <option value="1">Yes</option>
-      </select>
+        <label
+          >AnyHealthcare:
+          <select id="AnyHealthcare" required>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
 
-      <label for="AnyHealthcare">Any Healthcare Coverage:</label>
-      <select id="AnyHealthcare">
-        <option value="0">No</option>
-        <option value="1">Yes</option>
-      </select>
+        <label
+          >NoDocbcCost:
+          <select id="NoDocbcCost" required>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
 
-      <label for="NoDocbcCost">No Doctor Due to Cost:</label>
-      <select id="NoDocbcCost">
-        <option value="0">No</option>
-        <option value="1">Yes</option>
-      </select>
+        <label
+          >GenHlth:
+          <select id="GenHlth" required>
+            <option value="1">Excellent</option>
+            <option value="2">Very Good</option>
+            <option value="3">Good</option>
+            <option value="4">Fair</option>
+            <option value="5">Poor</option>
+          </select>
+        </label>
 
-      <label for="GenHlth">General Health (1-5):</label>
-      <input type="number" id="GenHlth" min="1" max="5" />
+        <label>MentHlth: <input type="number" id="MentHlth" required /></label>
+        <label>PhysHlth: <input type="number" id="PhysHlth" required /></label>
 
-      <label for="MentHlth">Mental Health (0-30 days):</label>
-      <input type="number" id="MentHlth" min="0" max="30" />
+        <label
+          >DiffWalk:
+          <select id="DiffWalk" required>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
 
-      <label for="PhysHlth">Physical Health (0-30 days):</label>
-      <input type="number" id="PhysHlth" min="0" max="30" />
+        <label
+          >Sex:
+          <select id="Sex" required>
+            <option value="0">Female</option>
+            <option value="1">Male</option>
+          </select>
+        </label>
 
-      <label for="DiffWalk">Difficulty Walking:</label>
-      <select id="DiffWalk">
-        <option value="0">No</option>
-        <option value="1">Yes</option>
-      </select>
+        <label
+          >Age:
+          <select id="Age" required>
+            <option value="1">18-24</option>
+            <option value="2">25-29</option>
+            <option value="3">30-34</option>
+            <option value="4">35-39</option>
+            <option value="5">40-44</option>
+            <option value="6">45-49</option>
+            <option value="7">50-54</option>
+            <option value="8">55-59</option>
+            <option value="9">60-64</option>
+            <option value="10">65-69</option>
+            <option value="11">70-74</option>
+            <option value="12">75-79</option>
+            <option value="13">80+</option>
+          </select>
+        </label>
 
-      <label for="Sex">Sex:</label>
-      <select id="Sex">
-        <option value="0">Male</option>
-        <option value="1">Female</option>
-      </select>
+        <label
+          >Education:
+          <select id="Education" required>
+            <option value="1">Never attended school</option>
+            <option value="2">Grades 1 through 8</option>
+            <option value="3">Grades 9 through 11</option>
+            <option value="4">Grade 12 or GED</option>
+            <option value="5">Some college or technical school</option>
+            <option value="6">College graduate</option>
+          </select>
+        </label>
 
-      <label for="Age">Age:</label>
-      <input type="number" id="Age" min="18" step="any" />
+        <label
+          >Income:
+          <select id="Income" required>
+            <option value="1">Less than $10,000</option>
+            <option value="2">$10,000 to $15,000</option>
+            <option value="3">$15,000 to $20,000</option>
+            <option value="4">$20,000 to $25,000</option>
+            <option value="5">$25,000 to $35,000</option>
+            <option value="6">$35,000 to $50,000</option>
+            <option value="7">$50,000 to $75,000</option>
+            <option value="8">$75,000 or more</option>
+          </select>
+        </label>
 
-      <label for="Education">Education Level (1-4):</label>
-      <input type="number" id="Education" min="1" max="4" />
+        <button type="submit">Predict Risk</button>
+      </form>
 
-      <label for="Income">Income Level (1-8):</label>
-      <input type="number" id="Income" min="1" max="8" />
-
-      <button onclick="submitForm()">Submit</button>
-
-      <div class="result" id="result"></div>
+      <div id="result"></div>
     </div>
 
     <script>
@@ -236,17 +330,17 @@
         })
           .then((response) => response.json())
           .then((data) => {
-            // Display the risk percentage and risk level
             document.getElementById("result").innerHTML =
               "Estimated Diabetes Risk: " +
               data.risk_percent +
               "%<br>" +
               "Risk Level: " +
-              data.risk_level +
-              "<br>";
+              data.risk_level;
           })
           .catch((error) => {
             console.error("Error:", error);
+            document.getElementById("result").innerHTML =
+              "Something went wrong. Please try again later.";
           });
       }
     </script>

@@ -1,5 +1,7 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, Response
 from dash import Dash, dcc, html
+from nbconvert import HTMLExporter
+import nbformat
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
 import plotly.express as px
@@ -20,8 +22,13 @@ dash_app = Dash(
 )
 
 # Load model and data
-model = joblib.load("diabetes_model.pkl")
+# model = joblib.load("diabetes_model.pkl")
+model = joblib.load("modelv2.pkl")
+scaler = joblib.load("scaler.pkl")
 df_viz = pd.read_csv("diabetes_data.csv")
+
+# Remove rows where BMI is greater than 50
+df_viz = df_viz[df_viz['BMI'] <= 50]
 
 # Feature list (used in prediction and visualization)
 required_keys = [
@@ -33,36 +40,41 @@ required_keys = [
 
 # ----- STATIC VISUALIZATIONS -----
 
-# Stacked bar chart
-df_diabetic = df_viz[df_viz["Diabetes_binary"] == 1]
-binary_cols = [
-    "HighBP", "HighChol", "CholCheck", "Smoker", "Stroke",
-    "HeartDiseaseorAttack", "PhysActivity", "Fruits", "Veggies",
-    "HvyAlcoholConsump", "AnyHealthcare", "NoDocbcCost", "DiffWalk"
+# # Stacked bar chart
+# df_diabetic = df_viz[df_viz["Diabetes_binary"] == 1]
+all_feature_cols = [
+    "HighBP", "HighChol", "CholCheck", "BMI", "Smoker",
+    "Stroke", "HeartDiseaseorAttack", "PhysActivity", "Fruits", "Veggies",
+    "HvyAlcoholConsump", "AnyHealthcare", "NoDocbcCost", "GenHlth", "MentHlth",
+    "PhysHlth", "DiffWalk", "Sex", "Age", "Income", "Education"
 ]
 
-percent_data = []
-for col in binary_cols:
-    total = len(df_diabetic)
-    true_count = df_diabetic[col].sum()
-    false_count = total - true_count
-    percent_data.append({"Feature": col, "Value": "1 (True)", "Percentage": (true_count / total) * 100})
-    percent_data.append({"Feature": col, "Value": "0 (False)", "Percentage": (false_count / total) * 100})
-percent_df = pd.DataFrame(percent_data)
+# percent_data = []
+# for col in binary_cols:
+#     total = len(df_diabetic)
+#     true_count = df_diabetic[col].sum()
+#     false_count = total - true_count
+#     percent_data.append({"Feature": col, "Value": "1 (True)", "Percentage": (true_count / total) * 100})
+#     percent_data.append({"Feature": col, "Value": "0 (False)", "Percentage": (false_count / total) * 100})
+# percent_df = pd.DataFrame(percent_data)
 
-bar_fig = px.bar(
-    percent_df,
-    x="Feature",
-    y="Percentage",
-    color="Value",
-    barmode="stack",
-    title="Percentage of Diabetic People with True/False Feature Values"
-)
+# bar_fig = px.bar(
+#     percent_df,
+#     x="Feature",
+#     y="Percentage",
+#     color="Value",
+#     barmode="stack",
+#     title="Percentage of Diabetic People with True/False Feature Values"
+# )
 
 # Static heatmap
 df_viz['BMI_Group'] = pd.cut(df_viz['BMI'], bins=[0, 18.5, 25, 30, 35, 40, 100],
                               labels=["Underweight", "Normal", "Overweight", "Obese I", "Obese II", "Extreme"])
-df_viz['Income_Group'] = pd.cut(df_viz['Income'], bins=5)
+df_viz['Income_Group'] = pd.cut(
+    df_viz['Income'], 
+    bins=[0, 2, 4, 6, 8], 
+    labels=["$0K–15K", "$15K–25K", "$25K–50K", "$50K+"]
+)
 
 grouped = df_viz.groupby(['BMI_Group', 'Income_Group'])['Diabetes_binary'].mean().unstack().fillna(0)
 
@@ -83,10 +95,10 @@ dash_app.layout = html.Div([
         children=[
             html.Div(
                 children=[
-                    html.A("Diabetes Prediction", href="/", className="navbar-brand"),
+                    html.A("Diabetes Risk Score", href="/", className="navbar-brand"),
                     html.Ul(
                         children=[
-                            html.Li(html.A("Assess", href="/"), className="nav-item", style={"margin-right": "20px"}),
+                            html.Li(html.A("Diabetes Risk Form", href="/"), className="nav-item", style={"margin-right": "20px"}),
                             html.Li(html.A("Dashboard", href="/dashboard"), className="nav-item")
                         ],
                         className="navbar-nav mr-auto"
@@ -100,8 +112,18 @@ dash_app.layout = html.Div([
     # Main Content with Page Padding
     html.Div([
         html.H2("Diabetes Data Dashboard"),
-        dcc.Graph(figure=bar_fig),
-        dcc.Graph(figure=heatmap_fig),
+        # dcc.Graph(figure=bar_fig),
+        html.H4("Feature Breakdown Among Diabetics"),
+        html.Div([
+                html.Label("Select Feature"),
+                dcc.Dropdown(
+                id="bar-feature-dropdown",
+                options=[{"label": col, "value": col} for col in all_feature_cols],
+                value=all_feature_cols[0]
+            )
+        ], style={"width": "50%", "margin": "20px 0"}),
+
+        dcc.Graph(id="dynamic-bar-chart"),
 
         html.H4("Predictive Heatmap by Feature"),
         html.Div([
@@ -120,8 +142,22 @@ dash_app.layout = html.Div([
             ),
         ], style={"width": "50%", "margin": "20px 0"}),
 
-        dcc.Graph(id="dynamic-heatmap")
-    ], style={"padding": "30px"})  # Padding around the entire page
+        dcc.Graph(id="dynamic-heatmap"),
+
+        html.H4("Diabetes Risk Line Graph (Other Features at Mean)"),
+        html.Div([
+            html.Label("Select Feature"),
+            dcc.Dropdown(
+                id="line-feature-dropdown",
+                options=[{"label": col, "value": col} for col in required_keys],
+                value="BMI"
+            )
+        ], style={"width": "50%", "margin": "20px 0"}),
+
+        dcc.Graph(id="risk-line-graph"),
+        html.H4("Income and BMI Group with Diabetic Risk Heatmap"),
+        dcc.Graph(figure=heatmap_fig),
+    ], style={"padding": "30px"}),
 ])
 
 
@@ -150,15 +186,17 @@ def update_heatmap(feature_x, feature_y):
     grid[feature_x] = xx.ravel()
     grid[feature_y] = yy.ravel()
 
-    # If your model needs a scaler, replace grid with scaler.transform(grid)
-    # grid_scaled = scaler.transform(grid)
-    grid_scaled = grid  # Assuming model can accept raw inputs
+    # Scale the grid data if necessary
+    grid_scaled = grid.copy()  # Copy the grid to scale it
+    grid_scaled[required_keys] = scaler.transform(grid[required_keys])  # Apply the scaling
 
-    probs = model.predict_proba(grid_scaled)[:, 1]
-    probs_grid = probs.reshape(xx.shape)
+    # Predict risk
+    probs = model.predict_proba(grid_scaled)[:, 1]  # Predict probabilities
+    probs_grid = probs.reshape(xx.shape)  # Reshape the probabilities to match the grid shape
 
+    # Create the heatmap
     fig = px.imshow(
-        probs_grid * 100,
+        probs_grid * 100,  # Scale the predicted risk to percentage
         x=x_range,
         y=y_range,
         color_continuous_scale="viridis",
@@ -172,34 +210,189 @@ def update_heatmap(feature_x, feature_y):
     )
     return fig
 
+
+
+@dash_app.callback(
+    Output("risk-line-graph", "figure"),
+    [Input("line-feature-dropdown", "value")]
+)
+def update_line_graph(feature):
+    feature_range = np.linspace(df_viz[feature].min(), df_viz[feature].max(), 200)
+
+    # Get mean values of required features
+    mean_values = df_viz[required_keys].mean().to_frame().T
+
+    # Repeat mean values and replace selected feature with range
+    base_df = pd.DataFrame(np.repeat(mean_values.values, len(feature_range), axis=0), columns=required_keys)
+    base_df[feature] = feature_range
+
+    # Scale if necessary (apply scaling here)
+    scaled_df = base_df.copy()  # Copy the dataframe to scale
+    
+    # Assuming you have a scaler initialized, fit it if necessary (uncomment if needed)
+    # scaler.fit(df_viz[required_keys])  # Fit the scaler to the training data if not done already
+    
+    # Apply the scaler transformation to the base_df excluding the feature column
+    scaled_df[required_keys] = scaler.transform(base_df[required_keys])
+
+    # Predict risk
+    probs = model.predict_proba(scaled_df)[:, 1] * 100
+
+    # Create figure
+    fig = px.line(
+        x=feature_range,
+        y=probs,
+        labels={"x": feature, "y": "Predicted Diabetes Risk (%)"},
+        title=f"Diabetes Risk vs. {feature} (Other Features at Mean)"
+    )
+    fig.update_layout(
+        xaxis_title=feature,
+        yaxis_title="Predicted Risk (%)",
+        template="plotly_white"
+    )
+    return fig
+
+@dash_app.callback(
+    Output("dynamic-bar-chart", "figure"),
+    Input("bar-feature-dropdown", "value")
+)
+def update_bar_chart(selected_feature):
+    df_clean = df_viz[[selected_feature, "Diabetes_binary"]].dropna()
+
+    # Apply readable labels for selected features
+    if selected_feature == "Education":
+        education_map = {
+            1: "Never attended",
+            2: "Grades 1–8",
+            3: "Grades 9–11",
+            4: "High School Grad",
+            5: "Some College/Tech",
+            6: "College Grad"
+        }
+        df_clean[selected_feature] = df_clean[selected_feature].map(education_map)
+
+    elif selected_feature == "Income":
+        income_map = {
+            1: "$10K",
+            2: "$10K–15K",
+            3: "$15K–20K",
+            4: "$20K–25K",
+            5: "$25K-$35K",
+            6: "$35K–50K",
+            7: "$50K–75K",
+            8: "≥ $75K"
+        }
+        df_clean[selected_feature] = df_clean[selected_feature].map(income_map)
+
+    elif selected_feature == "_AGEG5YR":
+        age_map = {
+            1: "18–24", 2: "25–29", 3: "30–34", 4: "35–39",
+            5: "40–44", 6: "45–49", 7: "50–54", 8: "55–59",
+            9: "60–64", 10: "65–69", 11: "70–74", 12: "75–79",
+            13: "80+"
+        }
+        df_clean[selected_feature] = df_clean[selected_feature].map(age_map)
+
+    elif selected_feature == "GenHlth":
+        health_map = {
+            1: "Excellent",
+            2: "Very Good",
+            3: "Good",
+            4: "Fair",
+            5: "Poor"
+        }
+        df_clean[selected_feature] = df_clean[selected_feature].map(health_map)
+
+    # Group and calculate percentage
+    grouped = df_clean.groupby([selected_feature, "Diabetes_binary"]).size().reset_index(name="Count")
+    total_per_group = grouped.groupby(selected_feature)["Count"].transform("sum")
+    grouped["Percentage"] = (grouped["Count"] / total_per_group) * 100
+    grouped["Diabetes Status"] = grouped["Diabetes_binary"].map({0: "No Diabetes", 1: "Diabetes"})
+
+    # Ensure Diabetes is stacked on bottom
+    grouped["Diabetes Status"] = pd.Categorical(
+        grouped["Diabetes Status"], 
+        categories=["Diabetes", "No Diabetes"], 
+        ordered=True
+    )
+
+    fig = px.bar(
+        grouped,
+        x=selected_feature,
+        y="Percentage",
+        color="Diabetes Status",
+        color_discrete_map={"Diabetes": "#3a3ebd", "No Diabetes": "#3a79bd"},
+        barmode="stack",
+        title=f"Diabetes Percentage by {selected_feature}"
+    )
+    fig.update_layout(xaxis_title=selected_feature, yaxis_title="Percentage")
+    return fig
+
+     
+ 
+
+
+
+
 # ----- FLASK ROUTES -----
 
 @server.route('/')
 def index():
     return render_template('index.html')
 
+
+@server.route("/notebook")
+def render_notebook():
+    with open("notebook.ipynb") as f:
+        nb = nbformat.read(f, as_version=4)
+        html_exporter = HTMLExporter()
+        body, _ = html_exporter.from_notebook_node(nb)
+        return Response(body, mimetype="text/html")
+
+# Define the expected feature names in the correct order
+FEATURE_NAMES = [
+    "HighBP", "HighChol", "CholCheck", "BMI", "Smoker", "Stroke",
+    "HeartDiseaseorAttack", "PhysActivity", "Fruits", "Veggies",
+    "HvyAlcoholConsump", "AnyHealthcare", "NoDocbcCost", "GenHlth",
+    "MentHlth", "PhysHlth", "DiffWalk", "Sex", "Age", "Education", "Income"
+]
+
 @server.route("/predict", methods=["POST"])
 def predict():
-    data = request.get_json()
-    if not all(key in data for key in required_keys):
-        return jsonify({"error": "Missing data"}), 400
+    try:
+        data = request.get_json()  # Get JSON data from the request
+        print(data)
 
-    features = np.array([float(data[key]) for key in required_keys]).reshape(1, -1)
-    probability = model.predict_proba(features)[0][1]
-    risk_percent = round(probability * 100, 2)
+        # Wrap input in DataFrame using the correct column names
+        input_df = pd.DataFrame([data], columns=FEATURE_NAMES)
 
-    if risk_percent >= 70:
-        risk_level = "High risk"
-    elif risk_percent >= 40:
-        risk_level = "Moderate risk"
-    else:
-        risk_level = "Low risk"
+        # Scale the input data using the pre-loaded scaler
+        input_scaled = scaler.transform(input_df)
 
-    return jsonify({
-        "risk_percent": risk_percent,
-        "risk_level": risk_level,
-        "message": f"Estimated diabetes risk is {risk_level} ({risk_percent}%)"
-    })
+        # Predict the probability of diabetes (positive class)
+        probs = model.predict_proba(input_scaled)
+        prob = probs[0][1]  # Probability of positive class (diabetes)
+
+        # Calculate risk percentage
+        risk_percent = round(prob * 100, 2)
+        print("risk %: ", risk_percent )
+
+        # Determine the risk level based on the percentage
+        if risk_percent >= 75:
+            risk_level = "High"
+        elif risk_percent >= 40:
+            risk_level = "Moderate"
+        else:
+            risk_level = "Low"
+
+        # Return the risk percentage and risk level as JSON response
+        return jsonify({
+            "risk_percent": risk_percent,
+            "risk_level": risk_level
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 if __name__ == "__main__":
     server.run(debug=True, host="0.0.0.0", port=8000)
