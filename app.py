@@ -43,11 +43,12 @@ required_keys = [
 # # Stacked bar chart
 # df_diabetic = df_viz[df_viz["Diabetes_binary"] == 1]
 all_feature_cols = [
-    "HighBP", "HighChol", "CholCheck", "BMI", "Smoker",
-    "Stroke", "HeartDiseaseorAttack", "PhysActivity", "Fruits", "Veggies",
-    "HvyAlcoholConsump", "AnyHealthcare", "NoDocbcCost", "GenHlth", "MentHlth",
-    "PhysHlth", "DiffWalk", "Sex", "Age", "Income", "Education"
+    "High Blood Pressure", "High Cholesterol", "Cholesterol Check", "BMI", "Smoker",
+    "Stroke", "Heart Disease or Attack", "Physical Activity", "Fruit Consumption", "Vegetable Consumption",
+    "Heavy Alcohol Consumption", "Any Healthcare", "No Doctor Due to Cost", "General Health", "Mental Health Days",
+    "Physical Health Days", "Difficulty Walking", "Sex", "Age Group", "Annual Income", "Education Level"
 ]
+
 
 # percent_data = []
 # for col in binary_cols:
@@ -89,6 +90,54 @@ heatmap_fig = ff.create_annotated_heatmap(
 
 # ----- DASH LAYOUT -----
 
+featureMap = {
+    "High Blood Pressure": "HighBP",
+    "High Cholesterol": "HighChol",
+    "Cholesterol Check": "CholCheck",
+    "BMI": "BMI",
+    "Smoker": "Smoker",
+    "Stroke": "Stroke",
+    "Heart Disease or Attack": "HeartDiseaseOrAttack",
+    "Physical Activity": "PhysicalActivity",
+    "Fruit Consumption": "Fruits",
+    "Vegetable Consumption": "Veggies",
+    "Heavy Alcohol Consumption": "HvyAlcoholConsump",
+    "Any Healthcare": "AnyHealthcare",
+    "No Doctor Due to Cost": "NoDocbcCost",
+    "General Health": "GenHlth",
+    "Mental Health Days": "MentHlth",
+    "Physical Health Days": "PhysHlth",
+    "Difficulty Walking": "DiffWalk",
+    "Sex": "Sex",
+    "Age Group": "Age",
+    "Education Level": "Education",
+    "Annual Income": "Income"
+}
+
+FEATURE_LEGEND = {
+        "HighBP": "High blood pressure (1 = Yes, 0 = No)",
+        "HighChol": "High cholesterol (1 = Yes, 0 = No)",
+        "CholCheck": "Cholesterol check within the past 5 years (1 = Yes, 0 = No)",
+        "BMI": "Body Mass Index (Continuous variable)",
+        "Smoker": "Smoking status (1 = Yes, 0 = No)",
+        "Stroke": "History of stroke (1 = Yes, 0 = No)",
+        "HeartDiseaseorAttack": "History of heart disease or heart attack (1 = Yes, 0 = No)",
+        "PhysActivity": "Physical activity in the past month (1 = Yes, 0 = No)",
+        "Fruits": "1+ serving of fruits daily (1 = Yes, 0 = No)",
+        "Veggies": "1+ serving of vegetables daily (1 = Yes, 0 = No)",
+        "HvyAlcoholConsump": "Heavy alcohol consumption 14+ drinks a week (male) or +7 drinks a week (female) (1 = Yes, 0 = No)",
+        "AnyHealthcare": "Access to healthcare (1 = Yes, 0 = No)",
+        "NoDocbcCost": "No doctor's visit due to cost (1 = Yes, 0 = No)",
+        "GenHlth": "Self-reported general health (1 = Excellent, 2 = Very good, 3 = Good, 4 = Fair, 5 = Poor)",
+        "MentHlth": "Mental health days in the past month (1-30)",
+        "PhysHlth": "Physical health days in the past month (1-30)",
+        "DiffWalk": "Difficulty walking or climbing stairs (1 = Yes, 0 = No)",
+        "Sex": "Gender (1 = Male, 0 = Female)",
+        "Age": "Age group (1 = 18-29, 2 = 30-39, 3 = 40-49, 4 = 50-59, 5 = 60-69, 6 = 70+)",
+        "Education": "Highest education level (1 = Less than high school, 2 = High school graduate, 3 = Some college, 4 = College graduate)",
+        "Income": "Income level (1 = Less than $10,000, 2 = $10,000-$19,999, 3 = $20,000-$34,999, 4 = $35,000-$49,999, 5 = $50,000-$74,999, 6 = $75,000 or more)"
+    }
+
 dash_app.layout = html.Div([
     # Navbar
     html.Nav(
@@ -112,6 +161,7 @@ dash_app.layout = html.Div([
     # Main Content with Page Padding
     html.Div([
         html.H2("Diabetes Data Dashboard"),
+        html.A("Jump to Feature Legend ↓", href="#feature-legend", style={"fontSize": "16px", "marginBottom": "20px", "display": "block"}),
         # dcc.Graph(figure=bar_fig),
         html.H4("Feature Breakdown Among Diabetics"),
         html.Div([
@@ -149,7 +199,7 @@ dash_app.layout = html.Div([
             html.Label("Select Feature"),
             dcc.Dropdown(
                 id="line-feature-dropdown",
-                options=[{"label": col, "value": col} for col in required_keys],
+                options=[{"label": col, "value": col} for col in all_feature_cols],
                 value="BMI"
             )
         ], style={"width": "50%", "margin": "20px 0"}),
@@ -157,6 +207,12 @@ dash_app.layout = html.Div([
         dcc.Graph(id="risk-line-graph"),
         html.H4("Income and BMI Group with Diabetic Risk Heatmap"),
         dcc.Graph(figure=heatmap_fig),
+        html.Div([
+            html.H4("Feature Legend", id="feature-legend"),
+            html.Ul([
+                html.Li(f"{feature}: {desc}") for feature, desc in FEATURE_LEGEND.items()
+            ])
+        ]),
     ], style={"padding": "30px"}),
 ])
 
@@ -205,18 +261,18 @@ def update_heatmap(feature_x, feature_y):
     )
     fig.update_layout(
         title=f"Diabetes Risk by {feature_x} and {feature_y}",
-        xaxis_title=feature_x,
+        xaxis_title=FEATURE_LEGEND[feature_x],
         yaxis_title=feature_y
     )
     return fig
-
-
 
 @dash_app.callback(
     Output("risk-line-graph", "figure"),
     [Input("line-feature-dropdown", "value")]
 )
-def update_line_graph(feature):
+def update_line_graph(selected_feature):
+    feature = featureMap[selected_feature]
+    print(feature)
     feature_range = np.linspace(df_viz[feature].min(), df_viz[feature].max(), 200)
 
     # Get mean values of required features
@@ -246,7 +302,7 @@ def update_line_graph(feature):
         title=f"Diabetes Risk vs. {feature} (Other Features at Mean)"
     )
     fig.update_layout(
-        xaxis_title=feature,
+        xaxis_title=FEATURE_LEGEND[feature],
         yaxis_title="Predicted Risk (%)",
         template="plotly_white"
     )
@@ -257,10 +313,18 @@ def update_line_graph(feature):
     Input("bar-feature-dropdown", "value")
 )
 def update_bar_chart(selected_feature):
-    df_clean = df_viz[[selected_feature, "Diabetes_binary"]].dropna()
+    feature = featureMap[selected_feature]
+    df_clean = df_viz[[feature, "Diabetes_binary"]].dropna()
 
     # Apply readable labels for selected features
-    if selected_feature == "Education":
+    if feature == "Sex":
+        sex_map = {
+                    1: "Male",
+                    0: "Female"
+               
+        }
+        df_clean[feature] = df_clean[feature].map(sex_map)
+    if feature == "Education":
         education_map = {
             1: "Never attended",
             2: "Grades 1–8",
@@ -269,9 +333,9 @@ def update_bar_chart(selected_feature):
             5: "Some College/Tech",
             6: "College Grad"
         }
-        df_clean[selected_feature] = df_clean[selected_feature].map(education_map)
+        df_clean[feature] = df_clean[feature].map(education_map)
 
-    elif selected_feature == "Income":
+    elif feature == "Income":
         income_map = {
             1: "$10K",
             2: "$10K–15K",
@@ -282,18 +346,18 @@ def update_bar_chart(selected_feature):
             7: "$50K–75K",
             8: "≥ $75K"
         }
-        df_clean[selected_feature] = df_clean[selected_feature].map(income_map)
+        df_clean[feature] = df_clean[feature].map(income_map)
 
-    elif selected_feature == "_AGEG5YR":
+    elif feature == "_AGEG5YR":
         age_map = {
             1: "18–24", 2: "25–29", 3: "30–34", 4: "35–39",
             5: "40–44", 6: "45–49", 7: "50–54", 8: "55–59",
             9: "60–64", 10: "65–69", 11: "70–74", 12: "75–79",
             13: "80+"
         }
-        df_clean[selected_feature] = df_clean[selected_feature].map(age_map)
+        df_clean[feature] = df_clean[feature].map(age_map)
 
-    elif selected_feature == "GenHlth":
+    elif feature == "GenHlth":
         health_map = {
             1: "Excellent",
             2: "Very Good",
@@ -301,11 +365,11 @@ def update_bar_chart(selected_feature):
             4: "Fair",
             5: "Poor"
         }
-        df_clean[selected_feature] = df_clean[selected_feature].map(health_map)
+        df_clean[feature] = df_clean[feature].map(health_map)
 
     # Group and calculate percentage
-    grouped = df_clean.groupby([selected_feature, "Diabetes_binary"]).size().reset_index(name="Count")
-    total_per_group = grouped.groupby(selected_feature)["Count"].transform("sum")
+    grouped = df_clean.groupby([feature, "Diabetes_binary"]).size().reset_index(name="Count")
+    total_per_group = grouped.groupby(feature)["Count"].transform("sum")
     grouped["Percentage"] = (grouped["Count"] / total_per_group) * 100
     grouped["Diabetes Status"] = grouped["Diabetes_binary"].map({0: "No Diabetes", 1: "Diabetes"})
 
@@ -318,14 +382,14 @@ def update_bar_chart(selected_feature):
 
     fig = px.bar(
         grouped,
-        x=selected_feature,
+        x=feature,
         y="Percentage",
         color="Diabetes Status",
         color_discrete_map={"Diabetes": "#3a3ebd", "No Diabetes": "#3a79bd"},
         barmode="stack",
-        title=f"Diabetes Percentage by {selected_feature}"
+        title=f"Diabetes Percentage by {feature}"
     )
-    fig.update_layout(xaxis_title=selected_feature, yaxis_title="Percentage")
+    fig.update_layout(xaxis_title=FEATURE_LEGEND[feature], yaxis_title="Percentage")
     return fig
 
      
