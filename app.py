@@ -133,7 +133,7 @@ FEATURE_LEGEND = {
         "PhysHlth": "Physical health days in the past month (1-30)",
         "DiffWalk": "Difficulty walking or climbing stairs (1 = Yes, 0 = No)",
         "Sex": "Gender (1 = Male, 0 = Female)",
-        "Age": "Age group (1 = 18-29, 2 = 30-39, 3 = 40-49, 4 = 50-59, 5 = 60-69, 6 = 70+)",
+        "Age": "Age group (1 = 18-24, 2 = 25-29, 3 = 30-34, 4 = 35–39, 5 = 40–44, 6 = 45–49, 7 = 50–54, 8 = 55–59, 9 = 60–64, 10 = 65–69, 11 = 70–74, 12 = 75–79, 13 = 80 or older)",
         "Education": "Highest education level (1 = Less than high school, 2 = High school graduate, 3 = Some college, 4 = College graduate)",
         "Income": "Income level (1 = Less than $10,000, 2 = $10,000-$19,999, 3 = $20,000-$34,999, 4 = $35,000-$49,999, 5 = $50,000-$74,999, 6 = $75,000 or more)"
     }
