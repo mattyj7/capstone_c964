@@ -332,7 +332,7 @@
           Education: document.getElementById("Education").value,
           Income: document.getElementById("Income").value,
         };
-
+        // Change to http://localhost:8000/predict for local dev testing
         fetch("https://capstone-c964.onrender.com/predict", {
           method: "POST",
           headers: {
