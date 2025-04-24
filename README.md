@@ -1,6 +1,8 @@
-# capstone_c964
+# Capstone_C964
 
-WGU Computer Science Capstone
+### WGU Computer Science Capstone
+
+Navigate to `https://capstone-c964.onrender.com/` to use the Diabetes Risk Score Tool
 
 ## How to run locally
 
@@ -28,14 +30,7 @@ code .
 pip install -r requirements.txt
 ```
 
-4. Run the Application
-   Once all packages are installed, you can start the application by running:
-
-```bash
-python3 app.py
-```
-
-5. Modify POST request to backend in `/templates/index.html`
+4. Modify POST request to backend in `/templates/index.html`
 
 ```bash
 # Change to http://localhost:8000/predict
@@ -48,4 +43,11 @@ python3 app.py
           },
           body: JSON.stringify(formData),
         })
+```
+
+5. Run the Application
+   Once all packages are installed, you can start the application by running:
+
+```bash
+python3 app.py
 ```
